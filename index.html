@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>2026 컴플라이언스 월드컵</title>
+    <style>
+        /* 폰트를 요즘 가장 트렌디하고 세련된 프리텐다드 / 시스템 산세리프 스타일로 전면 교체 */
+        body { 
+            background-color: #1a1a1a; 
+            color: #fff; 
+            font-family: -apple-system, BlinkMacSystemFont, "Pretendard Variable", Pretendard, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+            text-align: center; 
+            margin: 0; 
+            padding: 20px; 
+            overflow: hidden; 
+            letter-spacing: -0.3px;
+        }
+        #game-container { max-width: 1020px; margin: 0 auto; background-color: #2c3e50; padding: 20px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.7); border: 3px solid #34495e; position: relative; }
+        
+        /* 상단 상태바 */
+        #status-bar { display: flex; justify-content: space-between; align-items: center; font-size: 18px; margin-bottom: 15px; background: #222; padding: 15px 25px; border-radius: 12px; border: 1px solid #444; position: relative; z-index: 10; }
+        #timer { color: #ff4d4d; font-family: 'Courier New', Courier, monospace; font-weight: bold; font-size: 22px; }
+        #score-display { color: #f1c40f; font-weight: bold; }
+
+        /* 메인 스테이지 레이아웃 */
+        #main-stage { 
+            display: flex; width: 100%; position: relative; gap: 20px; 
+            align-items: flex-start; justify-content: center; min-height: 428px; 
+        }
+        
+        /* 인트로 첫 페이지 디자인 */
+        #intro-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle, #1e3c72 0%, #2a5298 100%);
+            border-radius: 15px; z-index: 100; display: flex;
+            flex-direction: column; justify-content: center; align-items: center;
+            padding: 30px; box-sizing: border-box; border: 4px solid #f1c40f;
+        }
+        .intro-title { font-size: 38px; color: #f1c40f; margin: 0 0 10px 0; text-shadow: 3px 3px 0px #000; font-weight: 900; font-family: 'Courier New', sans-serif; }
+        .intro-desc { font-size: 15px; color: #fff; line-height: 1.8; max-width: 600px; margin-bottom: 25px; text-shadow: 1px 1px 2px #000; }
+        .intro-features { display: flex; gap: 20px; margin-bottom: 30px; }
+        .feature-card { background: rgba(0, 0, 0, 0.4); padding: 12px 20px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); font-size: 13px; font-weight: bold; }
+        .btn-start { background: #e67e22; color: #fff; border: none; padding: 16px 40px; font-size: 18px; font-weight: bold; border-radius: 50px; cursor: pointer; transition: 0.3s; border-bottom: 4px solid #d35400; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        .btn-start:hover { background: #e74c3c; transform: translateY(-3px); }
+        .btn-start:active { transform: translateY(2px); border-bottom: none; }
+
+        /* 축구장(Pitch) 디자인 */
+        #pitch { 
+            width: 700px; height: 420px; flex-shrink: 0;
+            background: repeating-linear-gradient(90deg, #2e7d32, #2e7d32 45px, #388e3c 45px, #388e3c 90px);
+            border-radius: 15px; position: relative; overflow: hidden; border: 4px solid #1b5e20;
+            box-shadow: inset 0 -20px 50px rgba(0,0,0,0.3);
+        }
+
+        /* 상단 전광판 */
+        #stadium-top {
+            position: absolute; top: 0; left: 0; width: 100%; height: 45px;
+            background: #111; border-bottom: 4px solid #000; z-index: 2;
+            display: flex; justify-content: center; align-items: center;
+        }
+        #scoreboard-title {
+            font-family: 'Segoe UI', -apple-system, sans-serif; font-size: 17px; font-weight: 900;
+            color: #f1c40f; letter-spacing: 1px; text-shadow: 0 0 8px #f39c12;
+        }
+
+        /* 축구장 라인 마킹 */
+        #line-penalty-main { position: absolute; left: 480px; top: 90px; width: 4px; height: 310px; background: rgba(255,255,255,0.75); z-index: 1; }
+        #line-penalty-top { position: absolute; left: 480px; top: 90px; width: 220px; height: 4px; background: rgba(255,255,255,0.75); z-index: 1; }
+        #line-penalty-bottom { position: absolute; left: 480px; top: 396px; width: 220px; height: 4px; background: rgba(255,255,255,0.75); z-index: 1; }
+        #line-kicker-vertical { position: absolute; left: 280px; top: 45px; width: 4px; height: calc(100% - 45px); background: rgba(255,255,255,0.75); z-index: 1; }
+        #line-penalty-arc { position: absolute; left: 165px; top: 130px; width: 230px; height: 230px; border: 4px solid rgba(255,255,255,0.75); border-radius: 50%; clip-path: inset(0 50% 0 0); z-index: 1; }
+        #penalty-spot { position: absolute; left: 380px; top: 251px; width: 10px; height: 10px; background: #ffffff; border-radius: 50%; z-index: 2; box-shadow: 0 0 6px #fff; }
+
+        /* 골대 그물망 */
+        #stadium-goal-net { 
+            position: absolute; right: 0; top: 130px; width: 55px; height: 230px; 
+            border: 5px solid #ffffff; border-left: none;
+            background: rgba(255,255,255,0.15);
+            background-image: linear-gradient(rgba(255,255,255,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.3) 1px, transparent 1px);
+            background-size: 10px 10px; z-index: 3; box-shadow: -5px 0 15px rgba(0,0,0,0.2);
+        }
+
+        .goal-shake { animation: shake-net 0.4s ease-in-out; }
+        @keyframes shake-net {
+            0% { transform: translate(0, 0); }
+            20% { transform: translate(-6px, 3px) rotate(-2deg); }
+            40% { transform: translate(5px, -2px) rotate(2deg); }
+            60% { transform: translate(-4px, 2px) rotate(-1deg); }
+            80% { transform: translate(3px, -1px) rotate(1deg); }
+            100% { transform: translate(0, 0); }
+        }
+
+        /* 조준선 가이드 */
+        .target-box { position: absolute; right: 58px; width: 50px; height: 50px; border: 2px dashed rgba(255,235,59,0.6); border-radius: 6px; z-index: 5; transition: 0.2s; background: rgba(255,235,59,0.05); }
+        .target-box.active { border-color: #fff; background: rgba(255,235,59,0.4); transform: scale(1.08); box-shadow: 0 0 10px #ffeb3b; }
+        #tg1 { top: 145px; } #tg2 { top: 199px; } #tg3 { top: 253px; } #tg4 { top: 307px; }
+
+        /* 문제판 UI */
+        #quiz-overlay-box { 
+            position: absolute; top: 55px; left: 20px; width: 420px; min-height: 45px;
+            background: rgba(255,255,255,0.95); color: #222; padding: 12px 18px; border-radius: 8px; 
+            box-shadow: 4px 4px 15px rgba(0,0,0,0.4); z-index: 10; display: flex; align-items: center;
+            border-left: 8px solid #2e8b57; border: 2px solid #333; box-sizing: border-box;
+        }
+        #question { font-size: 15px; font-weight: bold; line-height: 1.5; text-align: left; word-break: keep-all; margin: 0; }
+
+        /* 보기 컨테이너 */
+        #options-container { 
+            margin-top: 145px; 
+            width: 260px; flex-shrink: 0;
+            display: flex; flex-direction: column; gap: 4px;
+            position: relative;
+        }
+        
+        .options-title {
+            position: absolute; top: -42px; left: 0; width: 100%;
+            background-color: #3498db; color: #fff; font-size: 16px; font-weight: bold;
+            padding: 8px 0; border-radius: 8px; text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2); border: 2px solid #2980b9; box-sizing: border-box;
+        }
+        
+        .btn-option { 
+            background: #ecf0f1; border: none; padding: 0 15px; height: 50px; 
+            font-size: 15px; font-weight: bold; border-radius: 10px; cursor: pointer; transition: 0.3s; 
+            text-align: left; color: #2c3e50; border-bottom: 4px solid #bdc3c7;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); box-sizing: border-box;
+            display: flex; align-items: center; line-height: 1.2;
+        }
+        .btn-option:hover { background: #fff; transform: translateX(-5px); border-bottom-color: #95a5a6; }
+        .btn-option:active { transform: translateY(2px); border-bottom: none; }
+
+        /* 캐릭터 */
+        .char-wrapper { position: absolute; transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94); z-index: 8; display: flex; flex-direction: column; align-items: center; }
+        .char-label { font-size: 11px; background: #000; color: #fff; padding: 3px 8px; border-radius: 5px; margin-top: 5px; font-weight: bold; white-space: nowrap; }
+        
+        #gk-player { right: 65px; top: 215px; }
+        #kicker-player { left: 170px; top: 215px; }
+        
+        /* 축구공 */
+        #ball { 
+            width: 26px; height: 26px; font-size: 24px; line-height: 26px; position: absolute; 
+            left: 249px; top: 243px; transition: all 0.55s cubic-bezier(0.25, 1, 0.5, 1); z-index: 10; 
+            text-shadow: 0 2px 4px rgba(0,0,0,0.4);
+        }
+
+        .spinning { animation: spin 0.3s linear infinite; }
+        .fire-effect { text-shadow: 0 0 15px #ff007f, 0 0 30px #ff00ff; filter: drop-shadow(0 0 10px #ff007f); }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* 결과 오버레이 */
+        #effect-overlay { 
+            position: absolute; top: 65%; left: 80px; transform: translateY(-50%); 
+            font-size: 60px; font-weight: 900; display: none; z-index: 20; text-align: left; width: 420px; 
+        }
+        .goal-text { color: #00f3ff; text-shadow: 0 0 15px #00f3ff, 2px 2px 0px #000; display: inline-block; }
+        .miss-text { color: #e74c3c; text-shadow: 0 0 15px #e74c3c, 2px 2px 0px #000; }
+        
+        .desc-sub-text { 
+            display: block; font-size: 14px; font-weight: bold; color: #fff; margin-top: 15px; 
+            text-shadow: 2px 2px 3px #000; line-height: 1.5; background: rgba(0,0,0,0.85); 
+            padding: 12px; border-radius: 6px; border-left: 5px solid #00f3ff; 
+        }
+        
+        .btn-retry { 
+            margin-top: 15px; padding: 10px 25px; font-size: 14px; font-weight: bold; 
+            cursor: pointer; border-radius: 8px; border: none; background: #e67e22; color: #fff;
+            display: inline-block; text-decoration: none; vertical-align: middle; z-index: 10; position: relative;
+        }
+        
+        .btn-opinion-link {
+            margin-top: 15px; margin-left: 15px; padding: 10px 25px; font-size: 14px; font-weight: bold;
+            cursor: pointer; border-radius: 8px; border: none; background: #3498db; color: #fff;
+            display: inline-block; text-decoration: none; border-bottom: 4px solid #2980b9; vertical-align: middle; z-index: 10; position: relative;
+        }
+        .btn-opinion-link:hover { background: #2980b9; }
+        .btn-opinion-link:active { transform: translateY(2px); border-bottom: none; }
+
+        /* 플래시 효과 */
+        #flash-screen { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(255, 255, 255, 0.9); z-index: 15; opacity: 0; pointer-events: none; display: none; 
+        }
+        .flash-animation { display: block !important; animation: camera-flash 0.5s 7; }
+        @keyframes camera-flash { 0% { opacity: 0; } 50% { opacity: 1; } 100% { opacity: 0; } }
+
+        /* 엔딩 효과 */
+        .confetti-piece { position: fixed; top: -20px; z-index: 9999; width: 10px; height: 15px; border-radius: 2px; animation: fall linear infinite; pointer-events: none; }
+        @keyframes fall {
+            0% { transform: translateY(-20px) rotate(0deg) scale(1); opacity: 1; }
+            100% { transform: translateY(110vh) rotate(720deg) scale(0.8); opacity: 0; }
+        }
+
+        .firework { 
+            position: absolute; width: 6px; height: 6px; border-radius: 50%; 
+            box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); animation: explode 1.5s ease-out infinite; z-index: 5; pointer-events: none; 
+        }
+        @keyframes explode {
+            0% { box-shadow: 0 0 0 0 #fff; opacity: 1; transform: scale(1); }
+            100% { 
+                box-shadow: 0 0 60px 40px transparent, 
+                            40px -40px 0 5px #f1c40f, -40px 40px 0 5px #e74c3c, 
+                            40px 40px 0 5px #3498db, -40px -40px 0 5px #2ecc71,
+                            0px -50px 0 5px #9b59b6, 0px 50px 0 5px #ff9f43,
+                            -50px 0px 0 5px #1abc9c, 50px 0px 0 5px #e84393; 
+                opacity: 0; transform: scale(1.5); 
+            }
+        }
+
+        .trophy-anim { font-size: 70px; margin: 0 0 10px 0; display: inline-block; animation: bounce-tada 1.2s ease-in-out infinite alternate; text-shadow: 0 10px 15px rgba(0,0,0,0.2); }
+        @keyframes bounce-tada {
+            0% { transform: scale(1) translateY(0); }
+            50% { transform: scale(1.15) translateY(-15px) rotate(-8deg); }
+            100% { transform: scale(1.15) translateY(-15px) rotate(8deg); }
+        }
+    </style>
+</head>
+<body>
+
+<h1 style="margin-top: 0; color: #f1c40f;">⚽ 2026 컴플라이언스 월드컵</h1>
+<p>컴플라이언스 월드컵이 개최되었습니다. 슛을 성공시켜 우승을 차지하세요.</p>
+
+<div id="game-container">
+    <div id="intro-screen">
+        <h2 class="intro-title">🏆 월드컵 참가방법</h2>
+        <p class="intro-desc">
+            삼성물산 임직원 선수 여러분 환영합니다!<br>
+            여러분은 회사 대표로 이번 대회에 참가하게 되었습니다.<br>
+            우승을 차지하기 위해서는 골키퍼를 피해 정확한 위치로 슛을 쏴야 합니다.<br>
+            퀴즈의 정답을 찾아 올바른 방향으로 슛을 쏘세요! 그리고 우승에 도전하세요!!<br>
+            이번 월드컵 게임을 통해 컴플라이언스를 쉽고 재미있게 학습해보세요.
+        </p>
+        <div class="intro-features">
+            <div class="feature-card">🤝 문제에 대한 정답 선택</div>
+            <div class="feature-card">🛑 20초 안에 슛 쏘기</div>
+            <div class="feature-card">🔥 골 성공하기</div>
+        </div>
+        <p style="font-size: 12px; color: #ffeb3b; margin-top: 0; font-weight: bold;">※ 제한시간 20초 이내에 올바른 컴플라이언스 보기를 선택하세요!</p>
+        <button class="btn-start" onclick="startGameNow()">⚽ 경기에 참여하기</button>
+    </div>
+
+    <div id="status-bar">
+        <span id="round-title" style="color: #ff4d4d; font-weight: bold;">준비 중...</span>
+        <span id="score-display">SCORE: <span id="score">0</span></span>
+        <span id="timer">00:20</span>
+    </div>
+    
+    <div id="main-stage">
+        <div id="pitch">
+            <div id="stadium-top">
+                <div id="scoreboard-title">2026 Compliance World Cup</div>
+            </div>
+            
+            <div id="line-kicker-vertical"></div>
+            <div id="line-penalty-arc"></div>
+            <div id="line-penalty-main"></div>
+            <div id="line-penalty-top"></div>
+            <div id="line-penalty-bottom"></div>
+            <div id="penalty-spot"></div>
+            <div id="stadium-goal-net"></div>
+            
+            <div id="quiz-overlay-box">
+                <p id="question">문제를 불러오는 중입니다...</p>
+            </div>
+            
+            <div id="effect-overlay">GOAL!</div>
+            <div id="flash-screen"></div>
+            
+            <div id="tg1" class="target-box"></div>
+            <div id="tg2" class="target-box"></div>
+            <div id="tg3" class="target-box"></div>
+            <div id="tg4" class="target-box"></div>
+            
+            <div id="gk-player" class="char-wrapper">
+                <svg width="60" height="60" viewBox="0 0 64 64">
+                    <rect x="20" y="24" width="24" height="22" fill="#2980b9" rx="4"/>
+                    <circle cx="32" cy="14" r="10" fill="#ffdbac"/>
+                    <rect x="12" y="24" width="8" height="15" fill="#34495e" rx="2" id="gk-l-arm"/>
+                    <rect x="44" y="24" width="8" height="15" fill="#34495e" rx="2" id="gk-r-arm"/>
+                    <rect x="24" y="46" width="7" height="10" fill="#2c3e50"/>
+                    <rect x="33" y="46" width="7" height="10" fill="#2c3e50"/>
+                </svg>
+                <div class="char-label">골키퍼</div>
+            </div>
+            
+            <div id="kicker-player" class="char-wrapper">
+                <svg width="60" height="60" viewBox="0 0 64 64">
+                    <rect x="20" y="24" width="24" height="22" fill="#f1c40f" rx="4"/>
+                    <circle cx="32" cy="14" r="10" fill="#ffdbac"/>
+                    <rect x="12" y="24" width="8" height="15" fill="#ffdbac" rx="2"/>
+                    <rect x="44" y="24" width="8" height="15" fill="#ffdbac" rx="2"/>
+                    <rect x="24" y="46" width="7" height="10" fill="#34495e" id="k-leg"/>
+                    <rect x="33" y="46" width="7" height="10" fill="#34495e"/>
+                </svg>
+                <div class="char-label">삼성물산 임직원</div>
+            </div>
+            
+            <div id="ball"></div>
+        </div>
+        
+        <div id="options-container"></div>
+    </div>
+</div>
+
+<script>
+    const quizData = [
+        { 
+            round: "32강전", 
+            q: "26년 월드컵부터 적용되는 \"Hydration Break\"는\n전∙후반 약 22분이 지난 시점에 3분간 휴식시간을 부여해 선수들이 물을 마시고 휴식을 취할 시간을 주는 것으로, 이는 컴플라이언스의 어떤 항목과 가장 연관되어 있을까요?", 
+            options: ["품질확보", "공정거래", "정보보호", "안전사고근절"], 
+            answer: 4,
+            commentary: "무더운 날씨에 선수들의 건강보호를 위한 규정으로, <br>임직원과 근로자의 안전한 근로환경 조성과 관련 있습니다."
+        },
+        { 
+            round: "16강전", 
+            q: "축구 생태계를 파괴하는 '승부조작 및 불법 베팅 금지'는 기업의 어떤 윤리 가치와 일치할까요?", 
+            options: ["부패방지", "비용절감", "직장 내 괴롭힘", "개인정보 보호"], 
+            answer: 1,
+            commentary: "승부조작과 불법 베팅은 뇌물, 부정청탁과 같은<br> 부정부패와 유사합니다."
+        },
+        { 
+            round: "8강전", 
+            q: "이번 월드컵부터 경기중 입을 가리고 상대와 대치하는 것은 인종차별 행위로 보고 곧바로 레드카드를 받게 됩니다. 입을 가린 채  \"원숭이\"라는 인종차별 발언을 한 의혹이 계기인데요. 이러한 경기규칙은 어떤 컴플라이언스 항목과 연결될까요?", 
+            options: ["근로시간 준수", "다양성 존중 및 차별 금지", "영업비밀 보호", "환경보호"], 
+            answer: 2,
+            commentary: "인종차별 행위는 다양성 존중과 차별금지와 같은<br> 인간존중 가치에 반하는 행위입니다."
+        },
+        { 
+            round: "4강전", 
+            q: "월드컵에서 가장 중요한 것은 페어플레이 입니다. 다음 중 기업의 공정거래 행위와 가장 관련이 없는 것은 무엇입니까?", 
+            options: ["인재제일", "담합행위 금지", "부당표시∙광고 금지", "부당지원 금지"], 
+            answer: 1,
+            commentary: "페어플레이는 정정당당한 경쟁이라는 점에서<br> 공정거래와 관련 있습니다."
+        },
+        { 
+            round: "결승전", 
+            q: "월드컵에서 도핑검사는 경기 전∙후 필수로 시행됩니다. 선수들의 신체적, 정신적 건강을 보호하고, 공정한 경쟁을 하기 위한 \"반도핑\" 규정은, 기업 성과 관리와 관련하여 어떤 의미를 가질까요?", 
+            options: ["무조건적인 1등 달성", "정당한 절차를 통한 성과", "결과 중심 주의", "예외적 규정 마련"], 
+            answer: 2,
+            commentary: "선수의 신체능력을 약물의 힘으로 불법적으로 끌어올리는 행위는<br> 기업이 눈앞의 이익을 위해 불법적인 수단을 동원하는 것과 같습니다."
+        }
+    ];
+
+    let currentStage = 0;
+    let score = 0;
+    let timeLeft = 20;
+    let timerInterval;
+    let isShooting = false;
+
+    const ballTargets = {
+        1: { left: "640px", top: "156px" },
+        2: { left: "640px", top: "210px" },
+        3: { left: "640px", top: "264px" },
+        4: { left: "640px", top: "318px" }
+    };
+
+    const blockBallTargets = {
+        1: { left: "565px", top: "148px" },
+        2: { left: "565px", top: "202px" },
+        3: { left: "565px", top: "256px" },
+        4: { left: "565px", top: "310px" }
+    };
+
+    const gkVerticalTargets = {
+        1: "156px",
+        2: "210px",
+        3: "264px",
+        4: "318px"
+    };
+
+    window.onload = function() {
+        prepareGameLayout();
+    };
+
+    function startGameNow() {
+        document.getElementById("intro-screen").style.display = "none";
+        initGame();
+    }
+
+    function prepareGameLayout() {
+        if (currentStage >= quizData.length) { endGame(); return; }
+        isShooting = false;
+        
+        const ball = document.getElementById("ball");
+        ball.innerText = "⚽";
+        ball.style.left = "249px"; ball.style.top = "243px";
+        ball.classList.remove("spinning", "fire-effect");
+        
+        const gk = document.getElementById("gk-player");
+        gk.style.right = "65px"; gk.style.top = "215px";
+        
+        const overlay = document.getElementById("effect-overlay");
+        overlay.style.display = "none";
+        overlay.className = "";
+        
+        document.getElementById("flash-screen").classList.remove("flash-animation");
+        
+        const currentQuiz = quizData[currentStage];
+        document.getElementById("round-title").innerText = currentQuiz.round;
+        document.getElementById("question").innerText = currentQuiz.q;
+        
+        const optContainer = document.getElementById("options-container");
+        optContainer.innerHTML = '<div class="options-title">&lt;보기&gt;</div>';
+        
+        currentQuiz.options.forEach((opt, idx) => {
+            const btn = document.createElement("button");
+            btn.className = "btn-option";
+            btn.innerText = `${idx + 1}. ${opt}`;
+            btn.onmouseover = () => document.getElementById(`tg${idx+1}`).classList.add('active');
+            btn.onmouseout = () => document.getElementById(`tg${idx+1}`).classList.remove('active');
+            btn.onclick = () => chooseAnswer(idx + 1);
+            optContainer.appendChild(btn);
+        });
+    }
+
+    function initGame() {
+        prepareGameLayout();
+        timeLeft = 20;
+        updateTimerDisplay();
+        startTimer();
+    }
+
+    function startTimer() {
+        clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            updateTimerDisplay();
+            if (timeLeft <= 0) { clearInterval(timerInterval); failRound("시간 초과"); }
+        }, 1000);
+    }
+
+    function updateTimerDisplay() {
+        document.getElementById("timer").innerText = `00:${timeLeft < 10 ? '0' + timeLeft : timeLeft}`;
+    }
+
+    function chooseAnswer(pick) {
+        if (isShooting) return;
+        isShooting = true;
+        clearInterval(timerInterval);
+
+        const isCorrect = (pick === quizData[currentStage].answer);
+        const ball = document.getElementById("ball");
+        const gk = document.getElementById("gk-player");
+        const overlay = document.getElementById("effect-overlay");
+
+        ball.pushTarget = isCorrect ? ballTargets[pick] : blockBallTargets[pick];
+
+        ball.classList.add("spinning", "fire-effect");
+        ball.style.left = ball.pushTarget.left;
+        ball.style.top = ball.pushTarget.top;
+
+        if (isCorrect) {
+            let missGkTop = (pick <= 2) ? gkVerticalTargets[3] : gkVerticalTargets[2];
+            gk.style.top = (parseInt(missGkTop) - 25) + "px";
+            
+            score += 20;
+            document.getElementById("score").innerText = score;
+            
+            setTimeout(() => {
+                const goalNet = document.getElementById("stadium-goal-net");
+                goalNet.classList.add("goal-shake");
+                setTimeout(() => goalNet.classList.remove("goal-shake"), 500);
+
+                const flashScreen = document.getElementById("flash-screen");
+                flashScreen.classList.add("flash-animation");
+                
+                setTimeout(() => flashScreen.classList.remove("flash-animation"), 3500);
+
+                overlay.innerHTML = `
+                    <span class="goal-text">GOAL! ⚽🔥</span>
+                    <span class="desc-sub-text">💡 준법 가이드:<br>${quizData[currentStage].commentary}</span>
+                `;
+                overlay.style.display = "block";
+            }, 400);
+
+            setTimeout(() => { currentStage++; initGame(); }, 5500);
+        } else {
+            gk.style.top = (parseInt(gkVerticalTargets[pick]) - 25) + "px";
+
+            setTimeout(() => {
+                ball.classList.remove("spinning");
+                overlay.innerText = "No Goal! 🛑";
+                overlay.className = "miss-text";
+                overlay.style.display = "block";
+            }, 400);
+
+            setTimeout(() => { failRound("오답"); }, 2000);
+        }
+    }
+
+    function failRound(reason) {
+        document.getElementById("options-container").innerHTML = `
+            <div style="background:#fff; color:#333; padding:20px; border-radius:10px; font-weight:bold; box-sizing: border-box;">
+                <p>${reason === "시간 초과" ? "시간이 다 되었습니다!" : "오답입니다!"}</p>
+                <button class="btn-retry" onclick="retryStage()">재도전 하기</button>
+            </div>
+        `;
+    }
+
+    function retryStage() { initGame(); }
+
+    function endGame() {
+        document.getElementById("main-stage").innerHTML = `
+            <div style="width:100%; padding:50px; background:#fff; color:#333; border-radius:20px; box-sizing:border-box; position:relative; overflow:hidden;">
+                <div class="firework" style="top:25%; left:15%; animation-delay: 0s;"></div>
+                <div class="firework" style="top:35%; left:85%; animation-delay: 0.3s;"></div>
+                <div class="firework" style="top:55%; left:20%; animation-delay: 0.7s;"></div>
+                <div class="firework" style="top:65%; left:80%; animation-delay: 1.1s;"></div>
+                <div class="firework" style="top:15%; left:50%; animation-delay: 0.5s;"></div>
+
+                <div class="trophy-anim">🏆</div>
+                <h2 style="font-size: 28px; margin-top:0;">축하합니다!</h2>
+                <p>귀하는 2026 컴플라이언스 승부차기 월드컵에서 최종 우승하셨습니다.</p>
+                <p style="font-weight:bold; color:#2c3e50;">앞으로도 지금과 같이 컴플라이언스를 완벽히 이해하는 최고의 페어플레이어가 되기를 바랍니다.</p>
+                
+                <a href="#" class="btn-retry" onclick="location.reload(); return false;">처음부터 다시하기</a>
+                <a href="https://platform.samsungcic.com/#/survey/home/SURVY202606101397176" target="_blank" class="btn-opinion-link">상품 응모 하러 가기</a>
+            </div>
+        `;
+        
+        triggerConfetti();
+    }
+
+    function triggerConfetti() {
+        const colors = ['#f1c40f', '#e74c3c', '#3498db', '#2ecc71', '#9b59b6', '#1abc9c', '#e84393'];
+        const confettiCount = 150; 
+
+        for (let i = 0; i < confettiCount; i++) {
+            let conf = document.createElement('div');
+            conf.className = 'confetti-piece';
+            conf.style.left = Math.random() * 100 + 'vw'; 
+            conf.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            conf.style.animationDuration = (Math.random() * 3 + 2) + 's'; 
+            conf.style.animationDelay = (Math.random() * 3) + 's'; 
+            
+            document.body.appendChild(conf);
+        }
+    }
+</script>
+</body>
+</html>
